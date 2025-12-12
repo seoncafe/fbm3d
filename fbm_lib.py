@@ -107,8 +107,9 @@ class GaussianRandomField2D:
   def __init__(self,nx=64,ny=64,slope=2.8,mean=0.0,sigma=1.0,kmin=None,kmax=None,output_Ak=False,
                seed=None,gaussian_amplitude=False,dtype='float32',centering=None):
 
-     #--- generate random realization
-     if seed != None: np.random.seed(seed=seed)
+     #--- a very simple random seed generation (2025.12.12)
+     if seed == None: seed = int(np.random.rand() * (2**32 - 1))
+     np.random.seed(seed=seed)
 
      phi = np.random.random((nx,ny)) * 2.0 * np.pi
      ang = np.zeros((nx,ny))
@@ -188,8 +189,9 @@ class GaussianRandomField:
   def __init__(self,nx=64,ny=64,nz=64,slope=11./3.,mean=0.0,sigma=1.0,kmin=None,kmax=None,output_Ak=False,
                seed=None,gaussian_amplitude=False,dtype='float32',centering=None):
   
-     #--- generate random realization
-     if seed != None: np.random.seed(seed=seed)
+     #--- a very simple random seed generation (2025.12.12)
+     if seed == None: seed = int(np.random.rand() * (2**32 - 1))
+     np.random.seed(seed=seed)
   
      phi = np.random.random((nx,ny,nz)) * 2.0 * np.pi
      ang = np.zeros((nx,ny,nz))
@@ -275,6 +277,10 @@ class LogNormalRandomField:
     # 2025.07.18
     def __init__(self,nx=64,ny=64,nz=64,slope=11./3., mean=0.0, sigma=1.0, kmin=None, kmax=None, verbose=False,
                  seed=None,gaussian_amplitude=None,dtype='float32',centering=None):
+
+        #--- a very simple random seed generation (2025.12.12)
+        if seed == None: seed = int(np.random.rand() * (2**32 - 1))
+        np.random.seed(seed=seed)
 
         iter_max      = 30
         converge_tol  = 0.005
@@ -420,34 +426,34 @@ class LogNormalRandomField:
         self.kmax  = kmax
         self.data  = np.exp(data + mean)
 
-        def centering(self,centering):
-           self.data = shift_center(self.data, centering)
+    def centering(self,centering):
+       self.data = shift_center(self.data, centering)
 
-        def copy(self):
-            return copy.deepcopy(self)
+    def copy(self):
+        return copy.deepcopy(self)
 
-        def writeto(self,fits_file=None,overwrite=True):
-            from astropy.io import fits
-            if fits_file != None:
-               fits_file = fits_file.replace('.fits.gz','').replace('.fits','')+'.fits.gz'
-            hdr          = fits.Header()
-            hdr['seed']  = (self.mean,  'seed')
-            hdr['mean']  = (self.mean,  'mean')
-            hdr['sigma'] = (self.sigma, 'standard deviation')
-            hdr['kmin']  = (self.kmin,  'wavenumber min')
-            hdr['kmax']  = (self.kmin,  'wavenumber max')
-            hdr['slope'] = (self.slope, 'power spectrum slope')
-            hdu = fits.PrimaryHDU(self.data, header=hdr)
-            hdu.writeto(fits_file,overwrite=overwrite)
+    def writeto(self,fits_file=None,overwrite=True):
+        from astropy.io import fits
+        if fits_file != None:
+           fits_file = fits_file.replace('.fits.gz','').replace('.fits','')+'.fits.gz'
+        hdr          = fits.Header()
+        hdr['seed']  = (self.mean,  'seed')
+        hdr['mean']  = (self.mean,  'mean')
+        hdr['sigma'] = (self.sigma, 'standard deviation')
+        hdr['kmin']  = (self.kmin,  'wavenumber min')
+        hdr['kmax']  = (self.kmin,  'wavenumber max')
+        hdr['slope'] = (self.slope, 'power spectrum slope')
+        hdu = fits.PrimaryHDU(self.data, header=hdr)
+        hdu.writeto(fits_file,overwrite=overwrite)
 
 #-----------------------------------------
 class fbm3d_ISM:
   def __init__(self,nx=64,ny=64,nz=64,mach=1.0,bvalue=0.4,method=2,normalize=False,kmin=None,kmax=None,verbose=False,
                seed=None,gaussian_amplitude=False,dtype='float32',centering=None):
 
-     #--- generate random realization
-     if seed == None: seed = int(np.random.rand() * (2**32 - 1))
-     np.random.seed(seed=seed)
+     ##--- generate random realization
+     #if seed == None: seed = int(np.random.rand() * (2**32 - 1))
+     #np.random.seed(seed=seed)
 
      par = np.array([ 2.841e-01, -9.168e-01, -9.334e-01,  1.221e+00, -2.546e-01,
                       8.173e-01,  5.994e-01,  1.326e+00, -1.125e+00,  2.119e-01,
@@ -487,7 +493,7 @@ class fbm3d_ISM:
                                   gaussian_amplitude=gaussian_amplitude,dtype=dtype,centering=centering)
         self.data = img.data
 
-     self.seed        = seed
+     self.seed        = img.seed
      self.mach        = mach
      self.bvalue      = bvalue
      self.mean_g      = mean_g
