@@ -271,6 +271,7 @@ class GaussianRandomField:
 
 #-----------------------------------------
 class LogNormalRandomField:
+    # 2025.12.12: The gaussian_amplitude option needs testing and should not be used for now.
     # 2025.07.18
     def __init__(self,nx=64,ny=64,nz=64,slope=11./3., mean=0.0, sigma=1.0, kmin=None, kmax=None, verbose=False,
                  seed=None,gaussian_amplitude=None,dtype='float32',centering=None):
@@ -325,6 +326,11 @@ class LogNormalRandomField:
         # To ensure that the field has a mean value of 'mean'
         #PSD0[0,0,0] = mean**2
         #Ak[0,0,0]   = mean
+
+        #--- To be tested. (2025.12.12)
+        if gaussian_amplitude == True:
+           gauss = np.random.normal(0.0,1.0,size=(nx,ny,nz))
+           Ak = Ak * gauss
 
         # Power Spectral Density of np.exp(data)
         PSD0_ln        = PSD0 * (sigma_ln/sigma)**2
