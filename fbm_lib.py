@@ -43,21 +43,26 @@ def shift_center(img, centering=None):
 
 #-----------------------------------------
 def add_colorbar(im, width=None, pad=None, **kwargs):
-    l, b, w, h = im.axes.get_position().bounds       # get boundaries
-    width = width or 0.05 * w                        # get width of the colorbar
-    pad = pad or width                               # get pad between im and cbar
-    fig = im.axes.figure                             # get figure of image
-    cax = fig.add_axes([l + w + pad, b, width, h])   # define cbar Axes
-    return fig.colorbar(im, cax=cax, **kwargs)       # draw cbar
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    ax = im.axes
+    divider = make_axes_locatable(ax)
+    if width is None:
+        width = "5%"
+    if pad is None:
+        pad = 0.05
+    cax = divider.append_axes("right", size=width, pad=pad)
+    return ax.figure.colorbar(im, cax=cax, **kwargs)
 
 #-----------------------------------------
 def zero_log(x):
-    val = np.where(x > 0.0, np.log(x), 0.0)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        val = np.where(x > 0.0, np.log(x), 0.0)
     return val
 
 #-----------------------------------------
 def zero_div(a,b):
-    val = np.where(np.abs(b) > 0.0, a/b, 0.0)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        val = np.where(np.abs(b) > 0.0, a/b, 0.0)
     return val
 
 #-----------------------------------------
@@ -130,7 +135,8 @@ class GaussianRandomField2D:
      if kmax == None: kmax = np.max(kr)
 
      # Apodize the Power Spectral Density (PSD).
-     PSD      = np.where(np.greater(kr, 0.0), kr**(-np.abs(slope)), 0.0)
+     with np.errstate(divide='ignore', invalid='ignore'):
+         PSD      = np.where(np.greater(kr, 0.0), kr**(-np.abs(slope)), 0.0)
      PSD[0,0] = 0.0
      if kmin > 0.0 or kmax < np.max(kr):
          PSD   = np.where((kr >= kmin) & (kr <= kmax), PSD, 0.0)
@@ -217,7 +223,8 @@ class GaussianRandomField:
      if kmax == None: kmax = np.max(kr)
 
      # Apodize the Power Spectral Density (PSD).
-     PSD        = np.where(np.greater(kr, 0.0), kr**(-np.abs(slope)), 0.0)
+     with np.errstate(divide='ignore', invalid='ignore'):
+         PSD        = np.where(np.greater(kr, 0.0), kr**(-np.abs(slope)), 0.0)
      PSD[0,0,0] = 0.0
      if kmin > 0.0 or kmax < np.max(kr):
          PSD   = np.where((kr >= kmin) & (kr <= kmax), PSD, 0.0)
@@ -323,7 +330,8 @@ class LogNormalRandomField:
         if kmax == None: kmax = np.max(kr_x)
 
         # Apodize the Power Spectral Density (PSD).
-        PSD0     = np.where(np.greater(kr, 0.0), kr**(-np.abs(slope)), 0.0)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            PSD0     = np.where(np.greater(kr, 0.0), kr**(-np.abs(slope)), 0.0)
         const    = sigma**2 / np.sum(PSD0.ravel()[1:])
         PSD0    *= const
         PSD0[0,0,0] = 0.0

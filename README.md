@@ -35,7 +35,7 @@ LogNormalRandomField(
 ## Usage Examples
 
 Detailed usage examples are provided in the following notebooks:
-- [example.ipynb](example.ipynb) - Basic usage with fbm3d_ISM class
+- [example1.ipynb](example1.ipynb) - Basic usage with fbm3d_ISM class
 - [example2.ipynb](example2.ipynb) - Comparison of different algorithms
 - [example3.ipynb](example3.ipynb) - LogNormalRandomField with 3D visualization and analysis
 
