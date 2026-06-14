@@ -4,4 +4,4 @@ The detailed algorithms are described in [Seon (2012)](https://ui.adsabs.harvard
 
 See [example.ipynb](example.ipynb), [example2.ipynb](example2.ipynb), and [example3.ipynb](example3.ipynb) for examples of how to use the code.
 
-[lewis-austin-2002]: https://ams.confex.com/ams/pdfpapers/4
+[lewis-austin-2002]: https://ams.confex.com/ams/11AR11CP/webprogram/Paper42772.html
