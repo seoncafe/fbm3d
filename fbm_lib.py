@@ -9,14 +9,14 @@
 #-- Usage: The followings show examples how to use this module.
 # from fbm_lib import fbm2d, fbm3d, fbm3d_ISM
 # a = fbm2d(128,128)
-# a.writeto('a.fits.gz')  # or a.writeto('a.h5')
+# a.writeto(output_file='a.fits.gz')  # or output_file='a.h5'
 # plt.imshow(a.data, origin='lower')
 # b = fbm3d(128,128,128)
-# b.writeto('b.fits.gz')
+# b.writeto(output_file='b.fits.gz')
 # plt.imshow(b.data[0,:,:])
 # plt.imshow(np.sum(b.data, axis=0))
 # c = fbm3d_ISM(128,128,128, mach=2.0)
-# c.writeto('c.fits.gz')
+# c.writeto(output_file='c.fits.gz')
 # plt.imshow(c.data[:,10,:], origin='lower')
 # plt.imshow(np.sum(c.data, axis=1), origin='lower')
 
@@ -56,19 +56,39 @@ def _write_output(output_file, data, metadata, overwrite=True):
     from astropy.io import fits
 
     if lower_name.endswith('.fits.gz'):
-        fits_file = output_file
+        fits_output_file = output_file
     elif lower_name.endswith('.fits'):
-        fits_file = output_file[:-5] + '.fits.gz'
+        fits_output_file = output_file[:-5] + '.fits.gz'
     else:
-        fits_file = output_file + '.fits.gz'
+        fits_output_file = output_file + '.fits.gz'
 
     header = fits.Header()
     for key, (value, description) in metadata.items():
         header[key] = (value, description)
     fits.PrimaryHDU(data, header=header).writeto(
-        fits_file, overwrite=overwrite
+        fits_output_file, overwrite=overwrite
     )
-    return fits_file
+    return fits_output_file
+
+#-----------------------------------------
+def _resolve_output_file(output_file, legacy_options):
+    """Resolve the output filename while accepting the former keyword."""
+    unknown_options = set(legacy_options) - {'fits_file'}
+    if unknown_options:
+        option = sorted(unknown_options)[0]
+        raise TypeError(
+            f"writeto() got an unexpected keyword argument '{option}'"
+        )
+
+    legacy_output_file = legacy_options.get('fits_file')
+    if legacy_output_file is not None:
+        if output_file is not None:
+            raise TypeError(
+                "writeto() received both 'output_file' and the former "
+                "'fits_file' keyword"
+            )
+        output_file = legacy_output_file
+    return output_file
 
 #-----------------------------------------
 def shift_center(img, centering=None):
@@ -222,7 +242,8 @@ class GaussianRandomField2D:
   def copy(self):
       return copy.deepcopy(self)
 
-  def writeto(self,fits_file=None,overwrite=True):
+  def writeto(self,output_file=None,overwrite=True,**legacy_options):
+     output_file = _resolve_output_file(output_file, legacy_options)
      metadata = {
         'seed':  (self.seed,  'seed'),
         'mean':  (self.mean,  'mean'),
@@ -231,7 +252,7 @@ class GaussianRandomField2D:
         'kmax':  (self.kmax,  'wavenumber max'),
         'slope': (self.slope, 'power spectrum slope'),
      }
-     _write_output(fits_file, self.data, metadata, overwrite=overwrite)
+     _write_output(output_file, self.data, metadata, overwrite=overwrite)
 
 #-----------------------------------------
 class GaussianRandomField:
@@ -307,7 +328,8 @@ class GaussianRandomField:
   def copy(self):
       return copy.deepcopy(self)
 
-  def writeto(self,fits_file=None,overwrite=True):
+  def writeto(self,output_file=None,overwrite=True,**legacy_options):
+     output_file = _resolve_output_file(output_file, legacy_options)
      metadata = {
         'seed':  (self.seed,  'seed'),
         'mean':  (self.mean,  'mean'),
@@ -316,7 +338,7 @@ class GaussianRandomField:
         'kmax':  (self.kmax,  'wavenumber max'),
         'slope': (self.slope, 'power spectrum slope'),
      }
-     _write_output(fits_file, self.data, metadata, overwrite=overwrite)
+     _write_output(output_file, self.data, metadata, overwrite=overwrite)
 
 #-----------------------------------------
 class LogNormalRandomField:
@@ -480,7 +502,8 @@ class LogNormalRandomField:
     def copy(self):
         return copy.deepcopy(self)
 
-    def writeto(self,fits_file=None,overwrite=True):
+    def writeto(self,output_file=None,overwrite=True,**legacy_options):
+        output_file = _resolve_output_file(output_file, legacy_options)
         metadata = {
             'seed':  (self.seed,  'seed'),
             'mean':  (self.mean,  'mean'),
@@ -489,7 +512,7 @@ class LogNormalRandomField:
             'kmax':  (self.kmax,  'wavenumber max'),
             'slope': (self.slope, 'power spectrum slope'),
         }
-        _write_output(fits_file, self.data, metadata, overwrite=overwrite)
+        _write_output(output_file, self.data, metadata, overwrite=overwrite)
 
 #-----------------------------------------
 class fbm3d_ISM:
@@ -560,7 +583,8 @@ class fbm3d_ISM:
   def copy(self):
       return copy.deepcopy(self)
 
-  def writeto(self,fits_file=None,overwrite=True):
+  def writeto(self,output_file=None,overwrite=True,**legacy_options):
+     output_file = _resolve_output_file(output_file, legacy_options)
      metadata = {
         'seed':     (self.seed,        'Random Number Seed'),
         'mach':     (self.mach,        'Mach number'),
@@ -574,11 +598,11 @@ class fbm3d_ISM:
         'kmin':     (self.kmin,        'wavenumber min'),
         'kmax':     (self.kmax,        'wavenumber max'),
      }
-     output_file = _write_output(
-         fits_file, self.data, metadata, overwrite=overwrite
+     saved_file = _write_output(
+         output_file, self.data, metadata, overwrite=overwrite
      )
-     if output_file is not None:
-        print('a data file saved: ', output_file)
+     if saved_file is not None:
+        print('a data file saved: ', saved_file)
 
 fbm3d_lognormal_ISM = fbm3d_ISM
 fbm3d               = GaussianRandomField

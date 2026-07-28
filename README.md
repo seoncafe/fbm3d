@@ -62,10 +62,10 @@ The output format is selected by the filename extension:
 
 ```python
 # FITS output
-field.writeto("lognormal_256.fits.gz")
+field.writeto(output_file="lognormal_256.fits.gz")
 
 # HDF5 output
-field.writeto("lognormal_256.h5")
+field.writeto(output_file="lognormal_256.h5")
 ```
 
 Python HDF5 files contain a gzip-compressed dataset named `data`. Generation
@@ -103,7 +103,7 @@ field = fbm3d_ISM(
     bvalue=0.4,
     seed=12345,
 )
-field.writeto("ism_mach2.h5")
+field.writeto(output_file="ism_mach2.h5")
 ```
 
 ### Power-spectrum analysis
@@ -177,4 +177,4 @@ preserving its target statistical properties.
 
 ---
 
-Last updated: 2026-07-28 13:22 KST
+Last updated: 2026-07-28 13:36 KST

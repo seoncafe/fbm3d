@@ -17,4 +17,4 @@ for idx in np.arange(len(mach_arr)):
    fname = 'M%03d_%04d.fits.gz' % (mach*10, nx)
    print('making...',fname)
    a = fbm3d_ISM(nx,ny,nz,mach=mach)
-   a.writeto(fname)
+   a.writeto(output_file=fname)
