@@ -1,5 +1,13 @@
   program make_fbm3d
 ! updated slightly, 2017-11-18
+!
+! 2026-07-28:
+!   - Replaced a compiler-specific rank-mismatched array initializer with
+!     standard Fortran reshape syntax.
+!   - Added validation for an even nx and for out_mode values 1 through 3.
+!   - Changed the default output to uncompressed FITS to avoid gzip becoming
+!     the main runtime bottleneck.
+!   - Updated numerical literals and bvalue normalization for portability.
   implicit none
   integer :: unit
   integer :: iseed,nx,ny,nz,out_mode

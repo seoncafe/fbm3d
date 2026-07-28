@@ -4,6 +4,17 @@
 ! 2009/04, Kwangil Seon
 !
 ! 2013-09-17, slightly modified.
+!
+! 2026-07-28, performance and memory optimization:
+!   - Parallelized field generation, reductions, and transforms with OpenMP
+!     and threaded single-precision FFTW.
+!   - Changed loop ordering for contiguous Fortran memory access.
+!   - Replaced per-cell radial powers with a precomputed amplitude table.
+!   - Removed the ang and gauss_k temporary cubes.
+!   - Allocated Pk1 and Pk2 only when requested by out_mode.
+!   - Combined normalization and the lognormal transform into one array pass.
+!   - Added deterministic per-thread random streams for a fixed seed and
+!     fixed OpenMP thread count.
 !-------------------------------------------------
 
    use define, only : twopi, wp, i8b

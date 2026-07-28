@@ -1,3 +1,10 @@
+! 2026-07-28:
+!   - Converted the output routine into a module with an explicit interface.
+!   - Added extension-based FITS and HDF5 output selection.
+!   - Added HDF5 data and optional Gaussian/lognormal power-spectrum datasets.
+!   - Stored generation parameters as HDF5 file attributes.
+!   - Made Fourier-space arrays optional so unused cubes are not allocated.
+!   - Added FITS and HDF5 error checks.
 module output_mod
   use hdf5
   implicit none
