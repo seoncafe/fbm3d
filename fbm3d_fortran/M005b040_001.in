@@ -3,6 +3,6 @@
   bvalue   =   0.4000
   mach     =   0.5000
   nx       =     256
-  outfile  = 'M005b040_001.fits.gz'
+  outfile  = 'M005b040_001.fits'
   out_mode = 1
 /

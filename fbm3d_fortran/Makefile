@@ -1,42 +1,68 @@
-#******************************** INTEL Fortran **********************
-#OMP	=	-fopenmp
-FC      =	ifort
-UNAME = $(shell uname)
-ifeq ($(UNAME), Linux)
-	FFLAGS	= -xhost -ipo -O3 -no-prec-div -fp-model fast=2 -fpp $(OMP)
-else
-	FFLAGS	= -xhost -fast -fpp $(OMP)
-endif
-ifdef OMP
-	LDFLAGS =	${FFLAGS} -lfftw3f_omp -lfftw3f -lcfitsio
-else
-	LDFLAGS =	${FFLAGS} -lfftw3f -lcfitsio
+ifeq ($(origin FC), default)
+FC = gfortran
 endif
 
-#********************************
-.SUFFIXES: .f .f90 .o
+USE_OPENMP ?= 1
 
-.f.o:
-	$(FC) $(FFLAGS) -c -o $@ $<
+FC_NAME := $(notdir $(firstword $(FC)))
 
-.f90.o:
-	$(FC) $(FFLAGS) -c -o $@ $<
+ifneq ($(filter ifort ifx,$(FC_NAME)),)
+BASE_FFLAGS = -O3 -xHost -fp-model fast=2 -fpp
+OMP_FLAG = -qopenmp
+else
+BASE_FFLAGS = -O3 -march=native -ffast-math -cpp
+OMP_FLAG = -fopenmp
+endif
 
-OBJS	= \
+FFTW_LIBS ?= $(shell pkg-config --libs fftw3f 2>/dev/null || echo -lfftw3f)
+CFITSIO_LIBS ?= $(shell pkg-config --libs cfitsio 2>/dev/null || echo -lcfitsio)
+HDF5_FFLAGS ?= $(shell pkg-config --cflags hdf5 2>/dev/null)
+HDF5_LIBS ?= -lhdf5_fortran $(shell pkg-config --libs hdf5 2>/dev/null || echo -lhdf5)
+
+ifeq ($(USE_OPENMP),1)
+FFLAGS ?= $(BASE_FFLAGS) $(OMP_FLAG)
+FFTW_THREAD_LIB ?= -lfftw3f_omp
+else
+FFLAGS ?= $(BASE_FFLAGS)
+FFTW_THREAD_LIB =
+endif
+
+LDLIBS = $(FFTW_THREAD_LIB) $(FFTW_LIBS) $(CFITSIO_LIBS) $(HDF5_LIBS)
+
+OBJS = \
 	define.o \
 	random_light.o \
-	fbm3d.o \
-	write_output.o
+	write_output.o \
+	fbm3d.o
 
-default: make_fbm3d.x
-	/bin/rm -rf *.o *.mod
+.PHONY: all clean cleanall debug
 
-make_fbm3d.x:$(OBJS) make_fbm3d.o
-	$(FC) make_fbm3d.o $(OBJS) $(LDFLAGS) -o make_fbm3d.x
-	/bin/rm -rf *.o *.mod
+all: make_fbm3d.x
+
+make_fbm3d.x: $(OBJS) make_fbm3d.o
+	$(FC) $(FFLAGS) $^ $(LDLIBS) -o $@
+
+random_light.o: random_light.f90
+	$(FC) $(HDF5_FFLAGS) $(FFLAGS) -c $< -o $@
+
+write_output.o: write_output.f90
+	$(FC) $(HDF5_FFLAGS) $(FFLAGS) -c $< -o $@
+
+fbm3d.o: fbm3d.f90 define.o random_light.o write_output.o
+	$(FC) $(HDF5_FFLAGS) $(FFLAGS) -c $< -o $@
+
+make_fbm3d.o: make_fbm3d.f90
+	$(FC) $(HDF5_FFLAGS) $(FFLAGS) -c $< -o $@
+
+define.o: define.f90
+	$(FC) $(HDF5_FFLAGS) $(FFLAGS) -c $< -o $@
+
+debug:
+	$(MAKE) cleanall
+	$(MAKE) USE_OPENMP=0 FFLAGS="-O0 -g -cpp -fcheck=all -Wall -Wextra"
 
 clean:
-	/bin/rm -f *.o *.mod
+	$(RM) *.o *.mod
 
-cleanall:
-	/bin/rm -f *.o *.mod make_fbm3d.x
+cleanall: clean
+	$(RM) make_fbm3d.x

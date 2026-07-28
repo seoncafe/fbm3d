@@ -9,7 +9,7 @@
 #-- Usage: The followings show examples how to use this module.
 # from fbm_lib import fbm2d, fbm3d, fbm3d_ISM
 # a = fbm2d(128,128)
-# a.writeto('a.fits.gz')
+# a.writeto('a.fits.gz')  # or a.writeto('a.h5')
 # plt.imshow(a.data, origin='lower')
 # b = fbm3d(128,128,128)
 # b.writeto('b.fits.gz')
@@ -23,6 +23,52 @@
 import numpy as np
 from numpy.fft import fftfreq, fftn, ifftn, ifft2
 import copy
+
+#-----------------------------------------
+def _write_output(output_file, data, metadata, overwrite=True):
+    """Write a field to FITS or HDF5, selected by the filename extension.
+
+    HDF5 files use a dataset named ``data`` and store the field parameters as
+    attributes on the file.  Filenames ending in ``.h5`` or ``.hdf5`` select
+    HDF5; all other filenames retain the historical FITS output behavior.
+    """
+    if output_file is None:
+        return None
+
+    output_file = str(output_file)
+    lower_name = output_file.lower()
+
+    if lower_name.endswith(('.h5', '.hdf5')):
+        try:
+            import h5py
+        except ImportError as exc:
+            raise ImportError(
+                "HDF5 output requires h5py. Install it with 'pip install h5py'."
+            ) from exc
+
+        mode = 'w' if overwrite else 'x'
+        with h5py.File(output_file, mode) as h5:
+            h5.create_dataset('data', data=data, compression='gzip')
+            for key, (value, _description) in metadata.items():
+                h5.attrs[key] = value
+        return output_file
+
+    from astropy.io import fits
+
+    if lower_name.endswith('.fits.gz'):
+        fits_file = output_file
+    elif lower_name.endswith('.fits'):
+        fits_file = output_file[:-5] + '.fits.gz'
+    else:
+        fits_file = output_file + '.fits.gz'
+
+    header = fits.Header()
+    for key, (value, description) in metadata.items():
+        header[key] = (value, description)
+    fits.PrimaryHDU(data, header=header).writeto(
+        fits_file, overwrite=overwrite
+    )
+    return fits_file
 
 #-----------------------------------------
 def shift_center(img, centering=None):
@@ -177,18 +223,15 @@ class GaussianRandomField2D:
       return copy.deepcopy(self)
 
   def writeto(self,fits_file=None,overwrite=True):
-     from astropy.io import fits
-     if fits_file != None:
-        fits_file = fits_file.replace('.fits.gz','').replace('.fits','')+'.fits.gz'
-        hdr          = fits.Header()
-        hdr['seed']  = (self.seed,  'seed')
-        hdr['mean']  = (self.mean,  'mean')
-        hdr['sigma'] = (self.sigma, 'standard deviation')
-        hdr['kmin']  = (self.kmin,  'wavenumber min')
-        hdr['kmax']  = (self.kmin,  'wavenumber max')
-        hdr['slope'] = (self.slope, 'power spectrum slope')
-        hdu = fits.PrimaryHDU(self.data, header=hdr)
-        hdu.writeto(fits_file,overwrite=overwrite)
+     metadata = {
+        'seed':  (self.seed,  'seed'),
+        'mean':  (self.mean,  'mean'),
+        'sigma': (self.sigma, 'standard deviation'),
+        'kmin':  (self.kmin,  'wavenumber min'),
+        'kmax':  (self.kmax,  'wavenumber max'),
+        'slope': (self.slope, 'power spectrum slope'),
+     }
+     _write_output(fits_file, self.data, metadata, overwrite=overwrite)
 
 #-----------------------------------------
 class GaussianRandomField:
@@ -265,18 +308,15 @@ class GaussianRandomField:
       return copy.deepcopy(self)
 
   def writeto(self,fits_file=None,overwrite=True):
-     from astropy.io import fits
-     if fits_file != None:
-        fits_file = fits_file.replace('.fits.gz','').replace('.fits','')+'.fits.gz'
-        hdr          = fits.Header()
-        hdr['seed']  = (self.seed,  'seed')
-        hdr['mean']  = (self.mean,  'mean')
-        hdr['sigma'] = (self.sigma, 'standard deviation')
-        hdr['kmin']  = (self.kmin,  'wavenumber min')
-        hdr['kmax']  = (self.kmin,  'wavenumber max')
-        hdr['slope'] = (self.slope, 'power spectrum slope')
-        hdu = fits.PrimaryHDU(self.data, header=hdr)
-        hdu.writeto(fits_file,overwrite=overwrite)
+     metadata = {
+        'seed':  (self.seed,  'seed'),
+        'mean':  (self.mean,  'mean'),
+        'sigma': (self.sigma, 'standard deviation'),
+        'kmin':  (self.kmin,  'wavenumber min'),
+        'kmax':  (self.kmax,  'wavenumber max'),
+        'slope': (self.slope, 'power spectrum slope'),
+     }
+     _write_output(fits_file, self.data, metadata, overwrite=overwrite)
 
 #-----------------------------------------
 class LogNormalRandomField:
@@ -441,18 +481,15 @@ class LogNormalRandomField:
         return copy.deepcopy(self)
 
     def writeto(self,fits_file=None,overwrite=True):
-        from astropy.io import fits
-        if fits_file != None:
-           fits_file = fits_file.replace('.fits.gz','').replace('.fits','')+'.fits.gz'
-        hdr          = fits.Header()
-        hdr['seed']  = (self.mean,  'seed')
-        hdr['mean']  = (self.mean,  'mean')
-        hdr['sigma'] = (self.sigma, 'standard deviation')
-        hdr['kmin']  = (self.kmin,  'wavenumber min')
-        hdr['kmax']  = (self.kmin,  'wavenumber max')
-        hdr['slope'] = (self.slope, 'power spectrum slope')
-        hdu = fits.PrimaryHDU(self.data, header=hdr)
-        hdu.writeto(fits_file,overwrite=overwrite)
+        metadata = {
+            'seed':  (self.seed,  'seed'),
+            'mean':  (self.mean,  'mean'),
+            'sigma': (self.sigma, 'standard deviation'),
+            'kmin':  (self.kmin,  'wavenumber min'),
+            'kmax':  (self.kmax,  'wavenumber max'),
+            'slope': (self.slope, 'power spectrum slope'),
+        }
+        _write_output(fits_file, self.data, metadata, overwrite=overwrite)
 
 #-----------------------------------------
 class fbm3d_ISM:
@@ -524,24 +561,24 @@ class fbm3d_ISM:
       return copy.deepcopy(self)
 
   def writeto(self,fits_file=None,overwrite=True):
-     from astropy.io import fits
-     if fits_file != None:
-        fits_file = fits_file.replace('.fits.gz','').replace('.fits','')+'.fits.gz'
-        hdr             = fits.Header()
-        hdr['seed']     = (self.seed,        'Random Number Seed')
-        hdr['mach']     = (self.mach,        'Mach number')
-        hdr['bvalue']   = (self.bvalue,      'b (1/3=solenoidal,0.4=natural,1.0=compressive)')
-        hdr['mean_g']   = (self.mean_g,      'mean of Gaussian Random field')
-        hdr['sigma_g']  = (self.sigma_g,     'stddev of Gaussian Random field')
-        hdr['slope_g']  = (self.slope_g,     'PSD slope of Gaussian Random field')
-        hdr['mean_ln']  = (self.mean_ln,     'mean of LogNormal Random field')
-        hdr['sigma_ln'] = (self.sigma_ln,    'stddev of LogNormal Random field')
-        hdr['slope_ln'] = (self.slope_ln,    'PSD slope of LogNormal Random field')
-        hdr['kmin']     = (self.kmin,        'wavenumber min')
-        hdr['kmax']     = (self.kmin,        'wavenumber max')
-        hdu = fits.PrimaryHDU(self.data, header=hdr)
-        hdu.writeto(fits_file,overwrite=overwrite)
-        print('a FITS file saved: ', fits_file)
+     metadata = {
+        'seed':     (self.seed,        'Random Number Seed'),
+        'mach':     (self.mach,        'Mach number'),
+        'bvalue':   (self.bvalue,      'b (1/3=solenoidal,0.4=natural,1.0=compressive)'),
+        'mean_g':   (self.mean_g,      'mean of Gaussian Random field'),
+        'sigma_g':  (self.sigma_g,     'stddev of Gaussian Random field'),
+        'slope_g':  (self.slope_g,     'PSD slope of Gaussian Random field'),
+        'mean_ln':  (self.mean_ln,     'mean of LogNormal Random field'),
+        'sigma_ln': (self.sigma_ln,    'stddev of LogNormal Random field'),
+        'slope_ln': (self.slope_ln,    'PSD slope of LogNormal Random field'),
+        'kmin':     (self.kmin,        'wavenumber min'),
+        'kmax':     (self.kmax,        'wavenumber max'),
+     }
+     output_file = _write_output(
+         fits_file, self.data, metadata, overwrite=overwrite
+     )
+     if output_file is not None:
+        print('a data file saved: ', output_file)
 
 fbm3d_lognormal_ISM = fbm3d_ISM
 fbm3d               = GaussianRandomField
