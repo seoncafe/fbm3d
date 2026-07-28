@@ -9,12 +9,13 @@
 !   - Parallelized field generation, reductions, and transforms with OpenMP
 !     and threaded single-precision FFTW.
 !   - Changed loop ordering for contiguous Fortran memory access.
-!   - Replaced per-cell radial powers with a precomputed amplitude table.
+!   - Replaced radial-power calculations at every grid cell with a
+!     precomputed amplitude table.
 !   - Removed the ang and gauss_k temporary cubes.
 !   - Allocated Pk1 and Pk2 only when requested by out_mode.
 !   - Combined normalization and the lognormal transform into one array pass.
-!   - Added deterministic per-thread random streams for a fixed seed and
-!     fixed OpenMP thread count.
+!   - Added deterministic random-number streams for each OpenMP thread when
+!     the seed and thread count are fixed.
 !-------------------------------------------------
 
    use define, only : twopi, wp, i8b
